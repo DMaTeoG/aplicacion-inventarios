@@ -1,0 +1,362 @@
+@startuml
+' Ajuste de escala para evitar error de renderizado (max 4096px)
+scale 0.7
+' Configuración para mostrar +, - en lugar de iconos de colores
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam packageStyle rectangle
+
+title Arquitectura por Capas - Sistema de Contabilidad e Inventario
+
+package "controller" {
+    class UsuarioController {
+        +login(req): Response
+        +getUsers(): List<Usuario>
+    }
+    class AuthController {
+        +authenticate(credentials): Token
+    }
+    class ProductoController {
+        +listar(): List<Producto>
+        +crear(p): Producto
+    }
+    class MovimientoController {
+        +registrarEntrada(e): void
+        +registrarSalida(s): void
+    }
+}
+
+package "service" {
+    class UsuarioService {
+        +validarCredenciales(u, p): boolean
+    }
+    class InventarioService {
+        +verificarStock(productoId): int
+        +actualizarPreciosGlobales(porcentaje): void
+    }
+    class MovimientoService {
+        +ejecutarMovimiento(mov): void
+    }
+    class ContabilidadService {
+        +generarAsiento(movimiento): void
+    }
+    class ReporteService
+}
+
+package "repository" {
+    interface IBaseRepository<T, ID> {
+        +save(entity: T): T
+        +findById(id: ID): T
+        +findAll(): List<T>
+        +delete(id: ID): void
+    }
+    
+    together {
+        interface UsuarioRepository extends IBaseRepository 
+        interface RolRepository extends IBaseRepository
+        interface PermisoRepository extends IBaseRepository
+        interface ClienteRepository extends IBaseRepository
+    }
+    together {
+        interface ProveedorRepository extends IBaseRepository
+        interface ProductoRepository extends IBaseRepository
+        interface CategoriaRepository extends IBaseRepository
+        interface AlmacenRepository extends IBaseRepository
+    }
+    together {
+        interface StockRepository extends IBaseRepository
+        interface MovimientoRepository extends IBaseRepository
+        interface AsientoContableRepository extends IBaseRepository
+    }
+}
+
+package "model" {
+
+abstract class Persona {
+    -Long id
+    -String nombre
+    -String telefono
+    -String direccion
+    +Persona()
+    +getId(): Long
+    +setId(Long): void
+    +getNombre(): String
+    +setNombre(String): void
+    +getTelefono(): String
+    +setTelefono(String): void
+    +getDireccion(): String
+    +setDireccion(String): void
+}
+
+class Cliente extends Persona {
+    +Cliente()
+}
+class Proveedor extends Persona {
+    +Proveedor()
+}
+
+class Usuario {
+    -Long id
+    -String username
+    -String password
+    -String email
+    -boolean activo
+    +Usuario()
+    +getId(): Long
+    +setId(Long): void
+    +getUsername(): String
+    +setUsername(String): void
+    +getPassword(): String
+    +setPassword(String): void
+    +getEmail(): String
+    +setEmail(String): void
+    +isActivo(): boolean
+    +setActivo(boolean): void
+    +login(): void
+    +logout(): void
+}
+
+class Rol {
+    -Long id
+    -String nombre
+    +Rol()
+    +getId(): Long
+    +setId(Long): void
+    +getNombre(): String
+    +setNombre(String): void
+}
+
+class Permiso {
+    -Long id
+    -String nombre
+    +Permiso()
+    +getId(): Long
+    +setId(Long): void
+    +getNombre(): String
+    +setNombre(String): void
+}
+
+Usuario "*" -- "*" Rol
+Rol "*" -- "*" Permiso
+
+class Categoria {
+    -Long id
+    -String nombre
+    +Categoria()
+    +getId(): Long
+    +setId(Long): void
+    +getNombre(): String
+    +setNombre(String): void
+}
+
+class UnidadMedida {
+    -Long id
+    -String nombre
+    -String abreviatura
+    +UnidadMedida()
+    +getId(): Long
+    +setId(Long): void
+    +getNombre(): String
+    +setNombre(String): void
+    +getAbreviatura(): String
+    +setAbreviatura(String): void
+}
+
+class Producto {
+    -Long id
+    -String sku
+    -String nombre
+    -double precioCompra
+    -double precioVenta
+    -int stockMinimo
+    +Producto()
+    +getId(): Long
+    +setId(Long): void
+    +getSku(): String
+    +setSku(String): void
+    +getNombre(): String
+    +setNombre(String): void
+    +getPrecioCompra(): double
+    +setPrecioCompra(double): void
+    +getPrecioVenta(): double
+    +setPrecioVenta(double): void
+    +getStockMinimo(): int
+    +setStockMinimo(int): void
+    +actualizarPrecio(): void
+}
+
+class Almacen {
+    -Long id
+    -String nombre
+    -String ubicacion
+    +Almacen()
+    +getId(): Long
+    +setId(Long): void
+    +getNombre(): String
+    +setNombre(String): void
+    +getUbicacion(): String
+    +setUbicacion(String): void
+}
+
+class Stock {
+    -Long id
+    -int cantidad
+    +Stock()
+    +getId(): Long
+    +setId(Long): void
+    +getCantidad(): int
+    +setCantidad(int): void
+    +aumentar(): void
+    +disminuir(): void
+}
+
+Categoria "1" -- "*" Producto
+UnidadMedida "1" -- "*" Producto
+Producto "1" -- "*" Stock
+Almacen "1" -- "*" Stock
+
+abstract class Movimiento {
+    -Long id
+    -LocalDateTime fecha
+    -String observacion
+    +Movimiento()
+    +getId(): Long
+    +setId(Long): void
+    +getFecha(): LocalDateTime
+    +setFecha(LocalDateTime): void
+    +getObservacion(): String
+    +setObservacion(String): void
+    +procesar(): void
+}
+
+class Entrada {
+    +Entrada()
+    +procesar(): void
+}
+
+class Salida {
+    +Salida()
+    +procesar(): void
+}
+
+class DetalleMovimiento {
+    -Long id
+    -int cantidad
+    -double precioUnitario
+    -double subtotal
+    +DetalleMovimiento()
+    +getId(): Long
+    +setId(Long): void
+    +getCantidad(): int
+    +setCantidad(int): void
+    +getPrecioUnitario(): double
+    +setPrecioUnitario(double): void
+    +getSubtotal(): double
+    +setSubtotal(double): void
+    +calcularSubtotal(): void
+}
+
+Movimiento <|-- Entrada
+Movimiento <|-- Salida
+Movimiento "1" *-- "*" DetalleMovimiento
+Producto "1" -- "*" DetalleMovimiento
+
+enum TipoCuenta <<enumeration>> {
+    ACTIVO
+    PASIVO
+    PATRIMONIO
+    INGRESO
+    GASTO
+}
+
+class CuentaContable {
+    -Long id
+    -String codigo
+    -String nombre
+    -TipoCuenta tipo
+    -double saldo
+    +CuentaContable()
+    +getId(): Long
+    +setId(Long): void
+    +getCodigo(): String
+    +setCodigo(String): void
+    +getNombre(): String
+    +setNombre(String): void
+    +getTipo(): TipoCuenta
+    +setTipo(TipoCuenta): void
+    +getSaldo(): double
+    +setSaldo(double): void
+    +debitar(): void
+    +acreditar(): void
+}
+
+class AsientoContable {
+    -Long id
+    -LocalDateTime fecha
+    -String descripcion
+    +AsientoContable()
+    +getId(): Long
+    +setId(Long): void
+    +getFecha(): LocalDateTime
+    +setFecha(LocalDateTime): void
+    +getDescripcion(): String
+    +setDescripcion(String): void
+    +validarPartidaDoble(): boolean
+}
+
+class DetalleAsiento {
+    -Long id
+    -double debe
+    -double haber
+    +DetalleAsiento()
+    +getId(): Long
+    +setId(Long): void
+    +getDebe(): double
+    +setDebe(double): void
+    +getHaber(): double
+    +setHaber(double): void
+}
+
+AsientoContable "1" *-- "*" DetalleAsiento
+CuentaContable "1" -- "*" DetalleAsiento
+
+abstract class Reporte {
+    +Reporte()
+    +generar(): void
+}
+class ReporteInventario {
+    +ReporteInventario()
+    +generar(): void
+}
+class ReporteContable {
+    +ReporteContable()
+    +generar(): void
+}
+
+Reporte <|-- ReporteInventario
+Reporte <|-- ReporteContable
+}
+
+'' --- RELACIONES DE CAPAS ---
+UsuarioController -down-> UsuarioService
+AuthController -down-> UsuarioService
+ProductoController -down-> InventarioService
+MovimientoController -down-> MovimientoService
+
+UsuarioService -down-> UsuarioRepository
+InventarioService -down-> ProductoRepository
+MovimientoService -down-> MovimientoRepository
+MovimientoService -down-> ContabilidadService : "solicita asiento"
+ContabilidadService -down-> AsientoContableRepository
+
+repository ..> model : "mapea"
+
+'' --- RELACIONES DEL SISTEMA (Lógica de Negocio) ---
+Entrada "*" --> "1" Proveedor
+Salida "*" --> "1" Cliente
+Movimiento "1" --> "1" AsientoContable
+AsientoContable --> Usuario
+Movimiento "1" *-- "*" DetalleMovimiento
+AsientoContable "1" *-- "*" DetalleAsiento
+
+@enduml

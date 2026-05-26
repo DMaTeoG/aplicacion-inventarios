@@ -1,0 +1,33 @@
+@startuml
+title Diagrama de Contexto - Sistema de Inventario y Contabilidad
+
+skinparam actorStyle awesome
+left to right direction
+
+actor "Administrador" as Admin <<Persona>>
+actor "Encargado de Almacén" as Almacen <<Persona>>
+actor "Contador" as Contador <<Persona>>
+
+package "Sistema de Inventario y Contabilidad" #LightBlue {
+    component "Núcleo del Sistema\n(Web / API)" as Sistema
+}
+
+actor "Proveedor" as Proveedor <<Entidad Externa>>
+actor "Cliente" as Cliente <<Entidad Externa>>
+cloud "Entidad Tributaria" as Fiscal <<Sistema Externo>>
+
+Admin --> Sistema : Gestiona usuarios, roles y seguridad
+Almacen --> Sistema : Registra stock, productos y movimientos
+Contador --> Sistema : Gestiona cuentas y genera reportes
+
+Proveedor -right-> Sistema : Entrega mercadería y facturas
+Sistema -right-> Cliente : Despacha productos y comprobantes
+Sistema -down-> Fiscal : Envía libros contables e impuestos
+
+note bottom of Sistema
+  El sistema centraliza la operación
+  y genera automáticamente los asientos
+  contables basados en los movimientos
+  de inventario registrados.
+end note
+@enduml

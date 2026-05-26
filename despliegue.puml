@@ -1,0 +1,48 @@
+@startuml
+title Vista de Despliegue Híbrida (AWS + Render Database)
+
+skinparam node {
+    BackgroundColor<<Dispositivo>> LightGray
+    BackgroundColor<<Cloud>> LightSkyBlue
+}
+
+node "Usuario Final" <<Dispositivo>> {
+    node "Navegador Web" as Browser
+}
+
+cloud "Amazon Web Services (AWS)" <<Cloud>> {
+    
+    node "VPC (Virtual Private Cloud)" {
+        
+        node "Public Subnet" {
+            node "EC2 Instance (App Server)" as EC2 {
+                artifact "API Sistema Inventario (.jar)" as App
+                component "Runtime Java" as JRE
+            }
+        }
+        
+        node "S3 Bucket" as S3 {
+            storage "Almacén de Reportes\ny Documentos"
+        }
+    }
+    
+    node "AWS IAM" as IAM {
+        [Políticas de Seguridad]
+    }
+}
+
+cloud "Render.com" <<Cloud>> {
+    node "Managed PostgreSQL" as RenderDB {
+        database "Inventory_DB" as DB
+    }
+}
+
+cloud "Servicios Externos" {
+    [Entidad Tributaria API] as Tax
+}
+
+Browser -- EC2 : HTTP/S (Puerto 443)
+App -- DB : JDBC/SSL (Provisión externa)
+App -- S3 : AWS SDK
+App -- Tax : REST/SOAP
+@enduml

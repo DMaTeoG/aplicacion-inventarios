@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: app
+  datasource:
+    url: jdbc:postgresql://dpg-d8atrn8jo6nc7383bcd0-a.oregon-postgres.render.com:5432/inventario_6kis
+    username: admin
+    password: IxeQmKUHzWPyik2PVpLV6NaSAQQOLgiO
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8085
+
+# Configuración personalizada para la generación de tokens JWT reales
+app:
+  jwt:
+    secret: 40d58e146ca34d18a86595af66fdd20615926700f2b1417c9ca149f543d560a7
+    expiration: 36000000 # 10 horas en milisegundos

@@ -1,0 +1,49 @@
+@startuml
+title Vista Funcional - Sistema de Inventario y Contabilidad
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Módulos del Sistema" {
+
+    component "Gestión de Seguridad" as Seguridad {
+        [Usuarios y Roles]
+        [Permisos de Acceso]
+    }
+
+    component "Gestión de Inventario" as Inventario {
+        [Productos y Categorías]
+        [Unidades de Medida]
+        [Almacenes y Stock]
+    }
+
+    component "Gestión de Movimientos" as Movimientos {
+        [Entradas de Producto]
+        [Salidas de Producto]
+        [Detalle de Movimientos]
+    }
+
+    component "Gestión de Contabilidad" as Contabilidad {
+        [Cuentas Contables]
+        [Asientos Contables]
+        [Partida Doble]
+    }
+
+    component "Gestión de Reportes" as Reportes {
+        [Reportes de Inventario]
+        [Reportes Contables]
+    }
+}
+
+Seguridad --> Inventario : Autoriza operaciones
+Seguridad --> Movimientos : Autoriza transacciones
+Seguridad --> Contabilidad : Autoriza registros
+
+Inventario --> Movimientos : Provee datos de productos/stock
+Movimientos --> Inventario : Actualiza stock
+Movimientos --> Contabilidad : Genera asientos contables
+
+Contabilidad --> Reportes : Provee datos financieros
+Inventario --> Reportes : Provee datos de stock
+
+@enduml
