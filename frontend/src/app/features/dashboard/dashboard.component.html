@@ -1,0 +1,205 @@
+<div class="dashboard-wrapper">
+  <!-- Barra Lateral (Sidebar) -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">📦</span>
+      <div class="brand-text">
+        <h3>Gestión POO</h3>
+        <p>Inventario & Cuentas</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <button 
+        type="button" 
+        class="menu-item" 
+        [class.active]="activeTab === 'dashboard'" 
+        (click)="setTab('dashboard')"
+      >
+        <span class="menu-icon">📊</span> Panel Resumen
+      </button>
+
+      <button 
+        type="button" 
+        class="menu-item" 
+        [class.active]="activeTab === 'stocks'" 
+        (click)="setTab('stocks')"
+      >
+        <span class="menu-icon">🔍</span> Existencias Físicas
+      </button>
+
+      <button 
+        type="button" 
+        class="menu-item" 
+        [class.active]="activeTab === 'productos'" 
+        (click)="setTab('productos')"
+      >
+        <span class="menu-icon">🏷️</span> Catálogo Productos
+      </button>
+
+      <button 
+        type="button" 
+        class="menu-item" 
+        [class.active]="activeTab === 'movimientos'" 
+        (click)="setTab('movimientos')"
+      >
+        <span class="menu-icon">📥</span> Registrar Movimiento
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <span class="user-avatar">👤</span>
+        <div class="user-info">
+          <span class="user-name">{{ username }}</span>
+          <span class="user-role">ADMIN</span>
+        </div>
+      </div>
+      <button type="button" class="btn-logout" (click)="logout()" title="Cerrar Sesión">
+        🚪 Salir
+      </button>
+    </div>
+  </aside>
+
+  <!-- Área de Contenido Principal -->
+  <main class="main-content">
+    <header class="main-header">
+      <div class="header-welcome">
+        <h1>Bienvenido al Sistema de Inventarios</h1>
+        <p>Servidor en la Nube PostgreSQL conectado</p>
+      </div>
+      <div class="db-indicator">
+        <span class="indicator-dot"></span>
+        <span class="indicator-text">Render Cloud DB Activa</span>
+      </div>
+    </header>
+
+    <div class="content-body">
+      @if (activeTab === 'dashboard') {
+        <div class="dashboard-overview">
+          <!-- Cuadrícula de Métricas -->
+          <div class="metrics-grid">
+            <div class="card metric-card animate-fade-in gradient-violet">
+              <div class="metric-icon">🏷️</div>
+              <div class="metric-info">
+                <span class="metric-label">Productos en Catálogo</span>
+                <span class="metric-value">{{ totalProductos }}</span>
+              </div>
+            </div>
+
+            <div class="card metric-card animate-fade-in gradient-blue" style="animation-delay: 0.1s;">
+              <div class="metric-icon">📦</div>
+              <div class="metric-info">
+                <span class="metric-label">Existencias Físicas Totales</span>
+                <span class="metric-value">{{ totalExistencias }}</span>
+              </div>
+            </div>
+
+            <div class="card metric-card animate-fade-in gradient-cyan" style="animation-delay: 0.2s;">
+              <div class="metric-icon">🏢</div>
+              <div class="metric-info">
+                <span class="metric-label">Almacenes Operativos</span>
+                <span class="metric-value">{{ totalAlmacenes }}</span>
+              </div>
+            </div>
+
+            <div class="card metric-card animate-fade-in gradient-emerald" style="animation-delay: 0.3s;">
+              <div class="metric-icon">💰</div>
+              <div class="metric-info">
+                <span class="metric-label">Valorización de Activos</span>
+                <span class="metric-value">${{ valuacionGlobal | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secciones de Tabla Rápida y Descripción del Sistema -->
+          <div class="dashboard-grid mt-4">
+            <div class="card table-card animate-fade-in">
+              <div class="card-header">
+                <h3>Resumen de Existencias</h3>
+                <button type="button" class="btn-text" (click)="setTab('stocks')">Ver todo ➔</button>
+              </div>
+              <hr class="section-divider" />
+              
+              @if (loadingMetrics) {
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                </div>
+              } @else {
+                <table class="premium-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Producto</th>
+                      <th>Almacén</th>
+                      <th>Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (st of recentStocks; track st.id) {
+                      <tr>
+                        <td class="font-code">{{ st.producto.sku }}</td>
+                        <td class="font-bold">{{ st.producto.nombre }}</td>
+                        <td>{{ st.almacen.nombre }}</td>
+                        <td class="font-bold font-numeric text-emerald">{{ st.cantidad }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
+
+            <div class="card concept-card animate-fade-in" style="animation-delay: 0.15s;">
+              <h3>Integridad del Sistema y Reglas</h3>
+              <hr class="section-divider" />
+              
+              <div class="concept-content">
+                <div class="concept-item">
+                  <span class="concept-bullet">🚀</span>
+                  <div class="concept-text">
+                    <strong>Programación Orientada a Objetos:</strong>
+                    <p>Mapeo relacional de herencia JPA (`Entrada` y `Salida` heredan de `Movimiento`) integrado con recursividad en categorías.</p>
+                  </div>
+                </div>
+
+                <div class="concept-item">
+                  <span class="concept-bullet">🛡️</span>
+                  <div class="concept-text">
+                    <strong>Integridad Contable por Partida Doble:</strong>
+                    <p>Cada movimiento de inventario genera automáticamente asientos contables de débito y crédito balanceados en Render PostgreSQL.</p>
+                  </div>
+                </div>
+
+                <div class="concept-item">
+                  <span class="concept-bullet">🛑</span>
+                  <div class="concept-text">
+                    <strong>Validación Anti-Corrupción:</strong>
+                    <p>Validaciones estrictas del lado del cliente. Las cantidades ingresadas y precios unitarios se filtran, bloqueando salidas que excedan las bodegas físicas.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (activeTab === 'stocks') {
+        <div class="animate-fade-in">
+          <app-stocks></app-stocks>
+        </div>
+      }
+
+      @if (activeTab === 'productos') {
+        <div class="animate-fade-in">
+          <app-productos></app-productos>
+        </div>
+      }
+
+      @if (activeTab === 'movimientos') {
+        <div class="animate-fade-in">
+          <app-movimientos></app-movimientos>
+        </div>
+      }
+    </div>
+  </main>
+</div>

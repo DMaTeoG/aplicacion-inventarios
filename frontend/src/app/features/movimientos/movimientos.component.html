@@ -1,0 +1,352 @@
+<div class="movimientos-container">
+  <div class="movimientos-header animate-fade-in">
+    <h2>Movimientos y Transacciones</h2>
+    <p>Ingreso de entradas/salidas e historial de movimientos del sistema</p>
+  </div>
+
+  <!-- Sub-Tabs de Control -->
+  <div class="sub-tabs animate-fade-in">
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="viewMode === 'registrar'" 
+      (click)="cambiarModo('registrar')"
+    >
+      📥 Registrar Movimiento
+    </button>
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="viewMode === 'historial'" 
+      (click)="cambiarModo('historial')"
+    >
+      📜 Historial de Movimientos
+    </button>
+  </div>
+
+  @if (successMessage) {
+    <div class="alert alert-success animate-slide-in">
+      🎉 {{ successMessage }}
+    </div>
+  }
+  @if (errorMessage) {
+    <div class="alert alert-danger animate-slide-in">
+      ⚠️ {{ errorMessage }}
+    </div>
+  }
+
+  <!-- VISTA 1: REGISTRAR MOVIMIENTO -->
+  @if (viewMode === 'registrar') {
+    <form [formGroup]="movimientoForm" (ngSubmit)="onSubmit()" class="movimiento-form animate-fade-in">
+      <!-- Encabezado de la Transacción -->
+      <div class="card transaction-card">
+        <h3>Datos de Cabecera</h3>
+        <hr class="section-divider" />
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Tipo de Movimiento</label>
+            <div class="radio-toggle">
+              <input 
+                type="radio" 
+                id="tipoEntrada" 
+                value="ENTRADA" 
+                formControlName="tipoMovimiento" 
+                class="radio-input"
+              />
+              <label for="tipoEntrada" class="radio-label radio-label-left">📥 ENTRADA</label>
+
+              <input 
+                type="radio" 
+                id="tipoSalida" 
+                value="SALIDA" 
+                formControlName="tipoMovimiento" 
+                class="radio-input"
+              />
+              <label for="tipoSalida" class="radio-label radio-label-right">📤 SALIDA</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Código de Documento / Factura</label>
+            <input 
+              type="text" 
+              formControlName="codigoDocumento" 
+              class="form-control" 
+              placeholder="Ej: FAC-2026-004"
+              [class.is-invalid]="movimientoForm.get('codigoDocumento')?.touched && movimientoForm.get('codigoDocumento')?.invalid"
+            />
+            @if (movimientoForm.get('codigoDocumento')?.touched && movimientoForm.get('codigoDocumento')?.errors?.['required']) {
+              <small class="error-text">El código de documento es requerido.</small>
+            }
+            @if (movimientoForm.get('codigoDocumento')?.touched && movimientoForm.get('codigoDocumento')?.errors?.['minlength']) {
+              <small class="error-text">Mínimo 4 caracteres.</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Almacén / Bodega de Afectación</label>
+            <select 
+              formControlName="almacenId" 
+              class="form-control"
+              [class.is-invalid]="movimientoForm.get('almacenId')?.touched && movimientoForm.get('almacenId')?.invalid"
+            >
+              <option value="">Seleccione un Almacén</option>
+              @for (alm of almacenes; track alm.id) {
+                <option [value]="alm.id">🏢 {{ alm.nombre }}</option>
+              }
+            </select>
+            @if (movimientoForm.get('almacenId')?.touched && movimientoForm.get('almacenId')?.errors?.['required']) {
+              <small class="error-text">Debe seleccionar un almacén.</small>
+            }
+          </div>
+
+          <!-- Tercero (Condicional según Tipo) -->
+          @if (tipoSeleccionado === 'ENTRADA') {
+            <div class="form-group animate-slide-in">
+              <label class="form-label">Proveedor Externo</label>
+              <select 
+                formControlName="proveedorId" 
+                class="form-control"
+                [class.is-invalid]="movimientoForm.get('proveedorId')?.touched && movimientoForm.get('proveedorId')?.invalid"
+              >
+                <option value="">Seleccione un Proveedor</option>
+                @for (prov of proveedores; track prov.id) {
+                  <option [value]="prov.id">👤 {{ prov.nombre }}</option>
+                }
+              </select>
+              @if (movimientoForm.get('proveedorId')?.touched && movimientoForm.get('proveedorId')?.errors?.['required']) {
+                <small class="error-text">Debe seleccionar un proveedor para la entrada.</small>
+              }
+            </div>
+          } @else {
+            <div class="form-group animate-slide-in">
+              <label class="form-label">Cliente Final</label>
+              <select 
+                formControlName="clienteId" 
+                class="form-control"
+                [class.is-invalid]="movimientoForm.get('clienteId')?.touched && movimientoForm.get('clienteId')?.invalid"
+              >
+                <option value="">Seleccione un Cliente</option>
+                @for (cl of clientes; track cl.id) {
+                  <option [value]="cl.id">👤 {{ cl.nombre }}</option>
+                }
+              </select>
+              @if (movimientoForm.get('clienteId')?.touched && movimientoForm.get('clienteId')?.errors?.['required']) {
+                <small class="error-text">Debe seleccionar un cliente para la salida.</small>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Detalles del Movimiento (Productos y cantidades) -->
+      <div class="card details-card">
+        <div class="details-header">
+          <h3>Detalle Físico de Ítems</h3>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="agregarDetalle()">
+            ➕ Agregar Ítem
+          </button>
+        </div>
+        <hr class="section-divider" />
+
+        @if (detalles.length === 0) {
+          <div class="empty-details">
+            <p>⚠️ Debe registrar al menos un ítem en el detalle del movimiento.</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table class="premium-table borderless">
+              <thead>
+                <tr>
+                  <th style="width: 45%;">Producto</th>
+                  <th style="width: 15%;">Cantidad</th>
+                  <th style="width: 20%;">Precio Unitario (USD)</th>
+                  <th style="width: 15%;">Subtotal</th>
+                  <th style="width: 5%; text-align: center;">Quitar</th>
+                </tr>
+              </thead>
+              <tbody formArrayName="detalles">
+                @for (det of detalles.controls; track $index) {
+                  <tr [formGroupName]="$index">
+                    <td>
+                      <select 
+                        formControlName="productoId" 
+                        class="form-control"
+                        [class.is-invalid]="det.get('productoId')?.touched && det.get('productoId')?.invalid"
+                      >
+                        <option value="">Seleccione Producto</option>
+                        @for (p of productos; track p.id) {
+                          <option [value]="p.id">🏷️ {{ p.nombre }} [{{ p.sku }}]</option>
+                        }
+                      </select>
+                      @if (det.get('productoId')?.touched && det.get('productoId')?.invalid) {
+                        <small class="error-text">El producto es obligatorio.</small>
+                      }
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        formControlName="cantidad" 
+                        class="form-control font-numeric" 
+                        min="1"
+                        [class.is-invalid]="(det.get('cantidad')?.touched && det.get('cantidad')?.invalid) || stockErrors[$index]"
+                      />
+                      @if (det.get('cantidad')?.touched && det.get('cantidad')?.errors?.['required']) {
+                        <small class="error-text">Obligatorio.</small>
+                      }
+                      @if (det.get('cantidad')?.touched && det.get('cantidad')?.errors?.['min']) {
+                        <small class="error-text">Mínimo 1.</small>
+                      }
+                      @if (stockErrors[$index]) {
+                        <span class="badge badge-danger item-error-badge animate-slide-in">
+                          {{ stockErrors[$index] }}
+                        </span>
+                      }
+                    </td>
+                    <td>
+                      <input 
+                        type="number" 
+                        formControlName="precioUnitario" 
+                        class="form-control font-numeric" 
+                        step="0.01"
+                        [class.is-invalid]="det.get('precioUnitario')?.touched && det.get('precioUnitario')?.invalid"
+                      />
+                      @if (det.get('precioUnitario')?.touched && det.get('precioUnitario')?.errors?.['required']) {
+                        <small class="error-text">Obligatorio.</small>
+                      }
+                      @if (det.get('precioUnitario')?.touched && det.get('precioUnitario')?.errors?.['min']) {
+                        <small class="error-text">Mínimo 0.01.</small>
+                      }
+                    </td>
+                    <td class="font-numeric font-bold cell-subtotal">
+                      ${{ (det.get('cantidad')?.value * det.get('precioUnitario')?.value) | number:'1.2-2' }}
+                    </td>
+                    <td style="text-align: center;">
+                      <button 
+                        type="button" 
+                        class="btn-delete" 
+                        (click)="eliminarDetalle($index)"
+                        title="Quitar ítem"
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <!-- Pie de Formulario y Acciones -->
+      <div class="form-actions-bar card animate-slide-in">
+        <div class="valuation-summary">
+          <span class="lbl">Valuación Total de Transacción</span>
+          <span class="val text-emerald">${{ getValuacionTotal() | number:'1.2-2' }} USD</span>
+        </div>
+
+        <div class="actions">
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="resetearFormulario()"
+            [disabled]="submitting"
+          >
+            Limpiar Formulario
+          </button>
+          
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="movimientoForm.invalid || hasStockErrors() || detalles.length === 0 || submitting"
+          >
+            @if (submitting) {
+              <span class="spinner"></span> Procesando...
+            } @else {
+              📥 Registrar e Integrar en Contabilidad
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+  }
+
+  <!-- VISTA 2: HISTORIAL DE MOVIMIENTOS -->
+  @if (viewMode === 'historial') {
+    @if (loadingHistorial) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando historial de movimientos desde Render PostgreSQL...</p>
+      </div>
+    } @else {
+      @if (historialMovimientos.length === 0) {
+        <div class="card empty-state animate-fade-in">
+          <span class="empty-icon">📜</span>
+          <h3>Historial Vacío</h3>
+          <p>No se registran movimientos en el sistema aún.</p>
+        </div>
+      } @else {
+        <div class="table-container animate-fade-in">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th>Fecha y Hora</th>
+                <th>Código Documento</th>
+                <th>Tipo</th>
+                <th>Tercero (Proveedor / Cliente)</th>
+                <th>Detalles de Ítems</th>
+                <th>Valorización Total</th>
+                <th>Asiento Contable</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (mov of historialMovimientos; track mov.id) {
+                <tr>
+                  <td>{{ mov.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="font-bold">{{ mov.codigoDocumento }}</td>
+                  <td>
+                    @if (mov.tipoMovimiento === 'ENTRADA') {
+                      <span class="badge badge-success">📥 ENTRADA</span>
+                    } @else {
+                      <span class="badge badge-danger">📤 SALIDA</span>
+                    }
+                  </td>
+                  <td>
+                    @if (mov.tipoMovimiento === 'ENTRADA') {
+                      <span>👤 {{ mov.proveedor?.nombre || 'Proveedor Demo' }}</span>
+                    } @else {
+                      <span>👤 {{ mov.cliente?.nombre || 'Cliente Demo' }}</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="items-list-container">
+                      @for (det of mov.detalles; track det.id) {
+                        <div class="item-history-tag">
+                          📦 {{ det.cantidad }}x {{ det.producto?.nombre }} (${{ det.precioUnitario | number:'1.2-2' }})
+                        </div>
+                      }
+                    </div>
+                  </td>
+                  <td class="font-numeric font-bold text-emerald">
+                    ${{ getMovValuation(mov) | number:'1.2-2' }} USD
+                  </td>
+                  <td>
+                    @if (mov.asientoContable) {
+                      <span class="badge badge-info font-code">
+                        Asiento #{{ mov.asientoContable.id }} (Balanceado)
+                      </span>
+                    } @else {
+                      <span class="badge badge-warning">Sin Asiento</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  }
+</div>

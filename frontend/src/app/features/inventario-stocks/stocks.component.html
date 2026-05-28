@@ -1,0 +1,118 @@
+<div class="stocks-container">
+  <div class="stocks-header">
+    <div>
+      <h2>Inventario Físico en Bodegas</h2>
+      <p>Existencias reales de mercaderías consolidadas en tiempo real</p>
+    </div>
+    <button class="btn btn-secondary" (click)="cargarDatos()">
+      🔄 Actualizar Datos
+    </button>
+  </div>
+
+  <!-- Panel de Filtros -->
+  <div class="card filter-card animate-slide-in">
+    <div class="filter-grid">
+      <div class="form-group mb-0">
+        <label class="form-label">Buscar Producto</label>
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            (ngModelChange)="applyFilters()" 
+            class="form-control" 
+            placeholder="Buscar por código o nombre..."
+          />
+        </div>
+      </div>
+
+      <div class="form-group mb-0">
+        <label class="form-label">Filtrar por Almacén</label>
+        <select 
+          [(ngModel)]="selectedAlmacenId" 
+          (ngModelChange)="applyFilters()" 
+          class="form-control"
+        >
+          <option value="">Todos los Almacenes</option>
+          @for (almacen of almacenes; track almacen.id) {
+            <option [value]="almacen.id">{{ almacen.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="valuacion-badge-card">
+        <span class="val-label">Valorización de Selección</span>
+        <span class="val-value">${{ getValuacionTotal() | number:'1.2-2' }} USD</span>
+      </div>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Consultando existencias de la base de datos de Render...</p>
+    </div>
+  } @else {
+    @if (filteredStocks.length === 0) {
+      <div class="card empty-state animate-fade-in">
+        <span class="empty-icon">📂</span>
+        <h3>No se encontraron existencias</h3>
+        <p>No hay registros de stock que coincidan con la búsqueda o el almacén seleccionado.</p>
+      </div>
+    } @else {
+      <div class="table-container animate-fade-in">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Código / SKU</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Almacén / Bodega</th>
+              <th>Cantidad</th>
+              <th>Precio Unitario</th>
+              <th>Valor Total</th>
+              <th>Estado Físico</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredStocks; track item.id) {
+              <tr>
+                <td class="font-code">{{ item.producto.sku }}</td>
+                <td>
+                  <div class="product-info-cell">
+                    <span class="product-name">{{ item.producto.nombre }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-info">
+                    {{ item.producto.categoria?.nombre || 'General' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="warehouse-cell">
+                    <span class="wh-icon">🏢</span>
+                    <span>{{ item.almacen.nombre }}</span>
+                  </div>
+                </td>
+                <td class="font-bold font-numeric">{{ item.cantidad }}</td>
+                <td class="font-numeric">${{ item.producto.precioVenta | number:'1.2-2' }}</td>
+                <td class="font-bold font-numeric text-emerald">${{ (item.cantidad * item.producto.precioVenta) | number:'1.2-2' }}</td>
+                <td>
+                  @if (item.cantidad === 0) {
+                    <span class="badge badge-danger">Agotado</span>
+                  } @else if (item.cantidad <= 5) {
+                    <span class="badge badge-danger">Stock Bajo</span>
+                  } @else if (item.cantidad <= 15) {
+                    <span class="badge badge-warning">Stock Medio</span>
+                  } @else {
+                    <span class="badge badge-success">Stock Óptimo</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

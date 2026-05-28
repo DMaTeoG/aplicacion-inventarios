@@ -1,0 +1,222 @@
+<div class="productos-container">
+  <div class="productos-header animate-fade-in">
+    <div>
+      <h2>Catálogo de Productos</h2>
+      <p>Gestión centralizada del catálogo y codificación SKU</p>
+    </div>
+    <button class="btn btn-primary" (click)="toggleModal(true)">
+      ➕ Agregar Producto
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando catálogo de productos...</p>
+    </div>
+  } @else {
+    @if (productos.length === 0) {
+      <div class="card empty-state animate-fade-in">
+        <span class="empty-icon">🏷️</span>
+        <h3>Catálogo Vacío</h3>
+        <p>No se registran productos en el sistema. Registra el primero haciendo click en 'Agregar Producto'.</p>
+      </div>
+    } @else {
+      <div class="table-container animate-fade-in">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Código / SKU</th>
+              <th>Nombre de Producto</th>
+              <th>Stock Mínimo</th>
+              <th>Categoría</th>
+              <th>Unidad</th>
+              <th>Precio Compra</th>
+              <th>Precio Venta</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (prod of productos; track prod.id) {
+              <tr>
+                <td class="font-code">{{ prod.sku }}</td>
+                <td class="font-bold">{{ prod.nombre }}</td>
+                <td class="font-numeric">{{ prod.stockMinimo || 5 }}</td>
+                <td>
+                  <span class="badge badge-info">
+                    {{ prod.categoria?.nombre || 'Sin Categoría' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-secondary">
+                    {{ prod.unidadMedida?.abreviatura || 'UND' }}
+                  </span>
+                </td>
+                <td class="font-numeric font-bold text-muted">
+                  ${{ prod.precioCompra | number:'1.2-2' }} USD
+                </td>
+                <td class="font-numeric font-bold text-emerald">
+                  ${{ prod.precioVenta | number:'1.2-2' }} USD
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  <!-- Modal para Agregar Producto -->
+  @if (showCreateModal) {
+    <div class="modal-overlay animate-fade-in">
+      <div class="card modal-card animate-slide-in">
+        <div class="modal-header">
+          <h3>Registrar Nuevo Producto</h3>
+          <button class="btn-close" (click)="toggleModal(false)">✕</button>
+        </div>
+
+        @if (successMessage) {
+          <div class="alert alert-success">
+            {{ successMessage }}
+          </div>
+        }
+        @if (errorMessage) {
+          <div class="alert alert-danger">
+            {{ errorMessage }}
+          </div>
+        }
+
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="modal-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Código / SKU</label>
+              <input 
+                type="text" 
+                formControlName="sku" 
+                class="form-control" 
+                placeholder="Ej: TECH-LAP-05"
+                [class.is-invalid]="productForm.get('sku')?.touched && productForm.get('sku')?.invalid"
+              />
+              @if (productForm.get('sku')?.touched && productForm.get('sku')?.errors?.['required']) {
+                <small class="error-text">El código SKU es obligatorio.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nombre del Producto</label>
+              <input 
+                type="text" 
+                formControlName="nombre" 
+                class="form-control" 
+                placeholder="Ej: Laptop ASUS ZenBook"
+                [class.is-invalid]="productForm.get('nombre')?.touched && productForm.get('nombre')?.invalid"
+              />
+              @if (productForm.get('nombre')?.touched && productForm.get('nombre')?.errors?.['required']) {
+                <small class="error-text">El nombre es obligatorio.</small>
+              }
+              @if (productForm.get('nombre')?.touched && productForm.get('nombre')?.errors?.['minlength']) {
+                <small class="error-text">Mínimo 3 caracteres.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Precio Compra (Costo)</label>
+              <input 
+                type="number" 
+                formControlName="precioCompra" 
+                class="form-control" 
+                step="0.01"
+                [class.is-invalid]="productForm.get('precioCompra')?.touched && productForm.get('precioCompra')?.invalid"
+              />
+              @if (productForm.get('precioCompra')?.touched && productForm.get('precioCompra')?.errors?.['required']) {
+                <small class="error-text">El precio de compra es obligatorio.</small>
+              }
+              @if (productForm.get('precioCompra')?.touched && productForm.get('precioCompra')?.errors?.['min']) {
+                <small class="error-text">Debe ser mayor a 0.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Precio Venta</label>
+              <input 
+                type="number" 
+                formControlName="precioVenta" 
+                class="form-control" 
+                step="0.01"
+                [class.is-invalid]="productForm.get('precioVenta')?.touched && productForm.get('precioVenta')?.invalid"
+              />
+              @if (productForm.get('precioVenta')?.touched && productForm.get('precioVenta')?.errors?.['required']) {
+                <small class="error-text">El precio de venta es obligatorio.</small>
+              }
+              @if (productForm.get('precioVenta')?.touched && productForm.get('precioVenta')?.errors?.['min']) {
+                <small class="error-text">Debe ser mayor a 0.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Stock Mínimo Alerta</label>
+              <input 
+                type="number" 
+                formControlName="stockMinimo" 
+                class="form-control" 
+                [class.is-invalid]="productForm.get('stockMinimo')?.touched && productForm.get('stockMinimo')?.invalid"
+              />
+              @if (productForm.get('stockMinimo')?.touched && productForm.get('stockMinimo')?.errors?.['required']) {
+                <small class="error-text">El stock mínimo es obligatorio.</small>
+              }
+              @if (productForm.get('stockMinimo')?.touched && productForm.get('stockMinimo')?.errors?.['min']) {
+                <small class="error-text">Mínimo 1 unidad.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Categoría</label>
+              <select 
+                formControlName="categoriaId" 
+                class="form-control"
+                [class.is-invalid]="productForm.get('categoriaId')?.touched && productForm.get('categoriaId')?.invalid"
+              >
+                <option value="">Seleccione una Categoría</option>
+                @for (cat of categorias; track cat.id) {
+                  <option [value]="cat.id">{{ cat.nombre }}</option>
+                }
+              </select>
+              @if (productForm.get('categoriaId')?.touched && productForm.get('categoriaId')?.errors?.['required']) {
+                <small class="error-text">La categoría es requerida.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Unidad de Medida</label>
+              <select 
+                formControlName="unidadMedidaId" 
+                class="form-control"
+                [class.is-invalid]="productForm.get('unidadMedidaId')?.touched && productForm.get('unidadMedidaId')?.invalid"
+              >
+                <option value="">Seleccione Unidad</option>
+                @for (und of unidades; track und.id) {
+                  <option [value]="und.id">{{ und.nombre }} ({{ und.abreviatura }})</option>
+                }
+              </select>
+              @if (productForm.get('unidadMedidaId')?.touched && productForm.get('unidadMedidaId')?.errors?.['required']) {
+                <small class="error-text">La unidad de medida es requerida.</small>
+              }
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="toggleModal(false)" [disabled]="submitting">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="productForm.invalid || submitting">
+              @if (submitting) {
+                <span class="spinner"></span> Guardando...
+              } @else {
+                Guardar Producto
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

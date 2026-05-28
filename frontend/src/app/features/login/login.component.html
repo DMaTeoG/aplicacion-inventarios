@@ -1,0 +1,71 @@
+<div class="login-wrapper">
+  <div class="login-glow"></div>
+  <div class="card login-card animate-fade-in">
+    <div class="login-header">
+      <div class="logo-circle">
+        <span class="logo-icon">📦</span>
+      </div>
+      <h2>Sistema de Inventario</h2>
+      <p>Control de Inventarios & Integración Contable</p>
+    </div>
+
+    @if (errorMessage) {
+      <div class="alert alert-danger animate-slide-in">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="username" class="form-label">Usuario</label>
+        <div class="input-wrapper">
+          <span class="input-icon">👤</span>
+          <input 
+            type="text" 
+            id="username" 
+            formControlName="username" 
+            class="form-control" 
+            placeholder="Ingrese su usuario (ej: admin)"
+            [class.is-invalid]="loginForm.get('username')?.touched && loginForm.get('username')?.invalid"
+          />
+        </div>
+        @if (loginForm.get('username')?.touched && loginForm.get('username')?.errors?.['required']) {
+          <small class="error-text">El usuario es requerido.</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Contraseña</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input 
+            type="password" 
+            id="password" 
+            formControlName="password" 
+            class="form-control" 
+            placeholder="••••••••"
+            [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+          />
+        </div>
+        @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']) {
+          <small class="error-text">La contraseña es requerida.</small>
+        }
+        @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['minlength']) {
+          <small class="error-text">La contraseña debe tener al menos 4 caracteres.</small>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-login" [disabled]="loginForm.invalid || loading">
+        @if (loading) {
+          <span class="spinner"></span> Procesando...
+        } @else {
+          Ingresar al Sistema
+        }
+      </button>
+    </form>
+    
+    <div class="login-footer">
+      <p>POO - Sistema de Cuentas por Partida Doble</p>
+    </div>
+  </div>
+</div>

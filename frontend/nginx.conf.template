@@ -1,0 +1,30 @@
+server {
+    listen 80;
+    server_name localhost;
+
+    # Directorio raíz con el frontend Angular
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+        # Habilitar enrutamiento del SPA de Angular (redirige a index.html si no se encuentra el archivo físico)
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy inverso para las llamadas de la API de Spring Boot
+    location /api/ {
+        # BACKEND_URL será sustituido dinámicamente al iniciar el contenedor usando la variable de entorno
+        proxy_pass ${BACKEND_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Ajustes de tiempo de respuesta
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
