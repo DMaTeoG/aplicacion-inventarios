@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Base de Datos PostgreSQL local para independizar el entorno de desarrollo de la base de datos en la nube
+  db:
+    image: postgres:16-alpine
+    container_name: inventarios-db-local
+    environment:
+      POSTGRES_DB: inventarios
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  # Backend (Spring Boot API)
+  backend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: inventarios-backend-local
+    ports:
+      - "8085:8085"
+    depends_on:
+      - db
+    environment:
+      - PORT=8085
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/inventarios
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - APP_JWT_SECRET=40d58e146ca34d18a86595af66fdd20615926700f2b1417c9ca149f543d560a7
+    restart: always
+
+  # Frontend (Angular + Nginx Proxy Inverso)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inventarios-frontend-local
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_URL=http://backend:8085
+    restart: always
+
+volumes:
+  pgdata:

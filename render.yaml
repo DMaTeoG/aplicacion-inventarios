@@ -1,0 +1,34 @@
+# Configuración de Render Blueprint para desplegar el Backend y Base de Datos
+services:
+  - type: web
+    name: inventarios-backend
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerContext: app
+    plan: free
+    envVars:
+      # Puerto en el que escuchará el contenedor
+      - key: PORT
+        value: 8085
+      
+      # Construcción dinámica de la URL de conexión JDBC para Spring Boot (evita el problema del protocolo postgres://)
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://${inventarios_db_host}:${inventarios_db_port}/${inventarios_db_database}
+      
+      # Credenciales obtenidas directamente del servicio de base de datos
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: inventarios-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: inventarios-db
+          property: password
+      
+      # Generar un secreto JWT seguro y aleatorio automáticamente
+      - key: APP_JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: inventarios-db
+    plan: free
